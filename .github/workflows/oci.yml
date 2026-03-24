@@ -19,23 +19,34 @@ jobs:
           tools: composer
           coverage: none
 
+      - name: Verify Secrets (Debug)
+        run: |
+          if [ -z "${{ secrets.OCI_USER_ID }}" ]; then
+            echo "CRITICAL ERROR: GitHub is passing empty variables! Your secrets are misconfigured in Settings."
+            exit 1
+          else
+            echo "SUCCESS: Secrets detected."
+          fi
+
       - name: Install Dependencies
         run: composer install --no-dev --optimize-autoloader
 
-      - name: Create Configuration and Key Files
+      - name: Mount Private Key
         run: |
-          echo "${{ secrets.OCI_PRIVATE_KEY }}" > ./private.pem
-          chmod 600 ./private.pem
-          echo "OCI_REGION=${{ secrets.OCI_REGION }}" > .env
-          echo "OCI_USER_ID=${{ secrets.OCI_USER_ID }}" >> .env
-          echo "OCI_TENANCY_ID=${{ secrets.OCI_TENANCY_ID }}" >> .env
-          echo "OCI_KEY_FINGERPRINT=${{ secrets.OCI_KEY_FINGERPRINT }}" >> .env
-          echo "OCI_PRIVATE_KEY_FILENAME=./private.pem" >> .env
-          echo "OCI_SUBNET_ID=${{ secrets.OCI_SUBNET_ID }}" >> .env
-          echo "OCI_IMAGE_ID=${{ secrets.OCI_IMAGE_ID }}" >> .env
-          echo "OCI_OCPUS=${{ secrets.OCI_OCPUS }}" >> .env
-          echo "OCI_MEMORY_IN_GBS=${{ secrets.OCI_MEMORY_IN_GBS }}" >> .env
-          echo "OCI_SHAPE=${{ secrets.OCI_SHAPE }}" >> .env
+          mkdir -p ~/.oci
+          echo "${{ secrets.OCI_PRIVATE_KEY }}" > ~/.oci/oci_api_key.pem
+          chmod 600 ~/.oci/oci_api_key.pem
 
       - name: Execute API Request
+        env:
+          OCI_REGION: ${{ secrets.OCI_REGION }}
+          OCI_USER_ID: ${{ secrets.OCI_USER_ID }}
+          OCI_TENANCY_ID: ${{ secrets.OCI_TENANCY_ID }}
+          OCI_KEY_FINGERPRINT: ${{ secrets.OCI_KEY_FINGERPRINT }}
+          OCI_PRIVATE_KEY_FILENAME: ~/.oci/oci_api_key.pem
+          OCI_SUBNET_ID: ${{ secrets.OCI_SUBNET_ID }}
+          OCI_IMAGE_ID: ${{ secrets.OCI_IMAGE_ID }}
+          OCI_OCPUS: ${{ secrets.OCI_OCPUS }}
+          OCI_MEMORY_IN_GBS: ${{ secrets.OCI_MEMORY_IN_GBS }}
+          OCI_SHAPE: ${{ secrets.OCI_SHAPE }}
         run: php index.php
