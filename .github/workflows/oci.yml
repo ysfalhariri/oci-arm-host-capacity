@@ -19,21 +19,14 @@ jobs:
           tools: composer
           coverage: none
 
-      - name: Verify Secrets (Debug)
-        run: |
-          if [ -z "${{ secrets.OCI_USER_ID }}" ]; then
-            echo "CRITICAL ERROR: GitHub is passing empty variables! Your secrets are misconfigured in Settings."
-            exit 1
-          else
-            echo "SUCCESS: Secrets detected."
-          fi
-
       - name: Install Dependencies
         run: composer install --no-dev --optimize-autoloader
 
-      - name: Mount Private Key
+      - name: Mount Private Key Securely
+        env:
+          PRIVATE_KEY: ${{ secrets.OCI_PRIVATE_KEY }}
         run: |
-          echo "${{ secrets.OCI_PRIVATE_KEY }}" > ${{ github.workspace }}/private.pem
+          printf "%s\n" "$PRIVATE_KEY" > ${{ github.workspace }}/private.pem
           chmod 600 ${{ github.workspace }}/private.pem
 
       - name: Execute API Request
@@ -41,6 +34,7 @@ jobs:
           OCI_REGION: ${{ secrets.OCI_REGION }}
           OCI_USER_ID: ${{ secrets.OCI_USER_ID }}
           OCI_TENANCY_ID: ${{ secrets.OCI_TENANCY_ID }}
+          OCI_COMPARTMENT_ID: ${{ secrets.OCI_TENANCY_ID }}
           OCI_KEY_FINGERPRINT: ${{ secrets.OCI_KEY_FINGERPRINT }}
           OCI_PRIVATE_KEY_FILENAME: ${{ github.workspace }}/private.pem
           OCI_SUBNET_ID: ${{ secrets.OCI_SUBNET_ID }}
@@ -49,4 +43,5 @@ jobs:
           OCI_MEMORY_IN_GBS: ${{ secrets.OCI_MEMORY_IN_GBS }}
           OCI_SHAPE: ${{ secrets.OCI_SHAPE }}
           OCI_SSH_PUBLIC_KEY: ${{ secrets.OCI_SSH_PUBLIC_KEY }}
+          OCI_AVAILABILITY_DOMAIN: "GyQu:ME-JEDDAH-1-AD-1"
         run: php index.php
