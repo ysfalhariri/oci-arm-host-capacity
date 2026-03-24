@@ -22,26 +22,28 @@ jobs:
       - name: Install Dependencies
         run: composer install --no-dev --optimize-autoloader
 
-      - name: Mount Private Key Securely
-        env:
-          PRIVATE_KEY: ${{ secrets.OCI_PRIVATE_KEY }}
+      - name: Build Raw Environment Files
         run: |
-          printf "%s\n" "$PRIVATE_KEY" > ${{ github.workspace }}/private.pem
-          chmod 600 ${{ github.workspace }}/private.pem
+          cat << 'EOF' > ./private.pem
+          ${{ secrets.OCI_PRIVATE_KEY }}
+          EOF
+          chmod 600 ./private.pem
+          
+          cat << 'EOF' > .env
+          OCI_REGION=${{ secrets.OCI_REGION }}
+          OCI_USER_ID=${{ secrets.OCI_USER_ID }}
+          OCI_TENANCY_ID=${{ secrets.OCI_TENANCY_ID }}
+          OCI_COMPARTMENT_ID=${{ secrets.OCI_TENANCY_ID }}
+          OCI_KEY_FINGERPRINT=${{ secrets.OCI_KEY_FINGERPRINT }}
+          OCI_PRIVATE_KEY_FILENAME=./private.pem
+          OCI_SUBNET_ID=${{ secrets.OCI_SUBNET_ID }}
+          OCI_IMAGE_ID=${{ secrets.OCI_IMAGE_ID }}
+          OCI_OCPUS=${{ secrets.OCI_OCPUS }}
+          OCI_MEMORY_IN_GBS=${{ secrets.OCI_MEMORY_IN_GBS }}
+          OCI_SHAPE=${{ secrets.OCI_SHAPE }}
+          OCI_SSH_PUBLIC_KEY=${{ secrets.OCI_SSH_PUBLIC_KEY }}
+          OCI_AVAILABILITY_DOMAIN=GyQu:ME-JEDDAH-1-AD-1
+          EOF
 
       - name: Execute API Request
-        env:
-          OCI_REGION: ${{ secrets.OCI_REGION }}
-          OCI_USER_ID: ${{ secrets.OCI_USER_ID }}
-          OCI_TENANCY_ID: ${{ secrets.OCI_TENANCY_ID }}
-          OCI_COMPARTMENT_ID: ${{ secrets.OCI_TENANCY_ID }}
-          OCI_KEY_FINGERPRINT: ${{ secrets.OCI_KEY_FINGERPRINT }}
-          OCI_PRIVATE_KEY_FILENAME: ${{ github.workspace }}/private.pem
-          OCI_SUBNET_ID: ${{ secrets.OCI_SUBNET_ID }}
-          OCI_IMAGE_ID: ${{ secrets.OCI_IMAGE_ID }}
-          OCI_OCPUS: ${{ secrets.OCI_OCPUS }}
-          OCI_MEMORY_IN_GBS: ${{ secrets.OCI_MEMORY_IN_GBS }}
-          OCI_SHAPE: ${{ secrets.OCI_SHAPE }}
-          OCI_SSH_PUBLIC_KEY: ${{ secrets.OCI_SSH_PUBLIC_KEY }}
-          OCI_AVAILABILITY_DOMAIN: "GyQu:ME-JEDDAH-1-AD-1"
         run: php index.php
